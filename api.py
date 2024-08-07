@@ -2,6 +2,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 import pandas as pd
 import getpass
+import logging
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
+import json
 
 from flask import Flask, request, jsonify
 
@@ -32,11 +36,41 @@ class DBConnection:
         if self.engine:
             self.engine.dispose()
 
+def log_data():
+    logging.basicConfig(
+        filename='api.log',
+        filemode='a',
+        format='%(message)s',
+        level=logging.INFO
+    )
+
+def decrypt(encrypted_file_path, private_key_path):
+    
+    with open(private_key_path, "rb") as key_file:
+        private_key = load_pem_private_key(key_file.read(), password=None)
+
+    with open(encrypted_file_path, "rb") as enc_file:
+        encrypted_data = enc_file.read()
+
+    decrypted_data = private_key.decrypt(
+        encrypted_data,
+        padding.PKCS1v15()
+    )
+    
+    try:
+        data = json.loads(decrypted_data)
+    except json.JSONDecodeError as e:
+        print(f"Failed to decode JSON: {e}")
+        return None
+    
+    return data
+    
 # Rota para obter uma view do banco 
 @app.route('/get_view/<table_name>', methods=['POST'])
 def get_view(table_name):
 
-    data = request.get_json()
+    data = decrypt('credentials.enc', 'private.pem')
+
     postgresql_user = data.get("username")
     postgresql_password = data.get("password")
     postgresql_host = data.get("host")
@@ -50,20 +84,14 @@ def get_view(table_name):
     )
     postgres_conn.connect()
 
-    print(postgresql_user)
-    print(postgresql_password)
-    print(postgresql_host)
-    print(postgresql_port)
-    print(postgresql_database)
-    print(postgresql_schema)
-    print(table_name)
-
     query = f"select * from {postgresql_database}.{postgresql_schema}.\"{table_name}\""
     data = postgres_conn.read_sql(query)
     postgres_conn.close()
 
     json_data = data.to_json(orient='records')
 
+    log_data()
+    
     return json_data
     
 # Rota principal
