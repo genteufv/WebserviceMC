@@ -18,12 +18,12 @@ class DBConnection:
     def connect(self):
         self.engine = create_engine(self.database_uri)
 
-    def execute(self, query: str) -> pd.DataFrame:
+    def read_sql(self, query: str) -> pd.DataFrame:
         if not self.engine:
             raise ConnectionError("The connection to the database is not open.")
         return pd.read_sql(query, self.engine)
 
-    def send(self, data: pd.DataFrame, table_name: str, schema : str):
+    def to_sql(self, data: pd.DataFrame, table_name: str, schema: str):
         if not self.engine:
             raise ConnectionError("The connection to the database is not open.")
         data.to_sql(table_name, self.engine, if_exists='replace', index=False, schema=schema)
