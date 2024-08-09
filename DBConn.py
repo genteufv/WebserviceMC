@@ -2,14 +2,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 import pandas as pd
 import getpass
+import pyodbc
 
 import warnings
 warnings.filterwarnings('ignore')
 
 TABLES = [
-    'PROCUFV_GETCADASTROIMOB_TEMP',
-    'PROCUFV_GETCADASTROMOB_TEMP',
-    'PROCUFV_GETDADOSITBI_TEMP'
+    'PROCUFV_GETCADASTROIMOB_TEMP',#
+    'PROCUFV_GETCADASTROMOB_TEMP',#
+    'PROCUFV_GETDADOSITBI_TEMP'#
 ]
 
 class DBConnection:
@@ -50,13 +51,23 @@ def main():
     postgresql_user     = input("user    : ")
     postgresql_password = getpass.getpass("password: ")
 
-    schema = "dados"
+
+    schemapg = "dados"
+    schemasql = "dbo"
 
     print("\nConnecting to SQL Server...")
-    sqls_conn = DBConnection(
-        database_uri=f"mssql+pyodbc://{sqls_user}:{sqls_password}@{sqls_host}:{sqls_port}/{sqls_database}?driver=ODBC+Driver+17+for+SQL+Server"
-    )
-    sqls_conn.connect()
+    try:
+        connection = pyodbc.connect(
+            'DRIVER={ODBC Driver 17 for SQL Server};'
+            f'SERVER={sqls_host};'
+            f'DATABASE={sqls_database};'
+            f'UID={sqls_user};'
+            f'PWD={sqls_password}'
+        )
+        print("Conexão estabelecida com sucesso!")
+        sqls_conn = connection.cursor()
+    except pyodbc.Error as ex:
+        print(f"Erro ao conectar: {ex}")
 
     print("Connecting to PostgreSQL...")
     postgres_conn = DBConnection(
@@ -64,11 +75,17 @@ def main():
     )
     postgres_conn.connect()
 
-    for table in TABLES:
-        query = f"select * from {sqls_database}.{schema}.{table}"
-        data  = sqls_conn.execute(query)
+    print("Data Base's connected...")
 
-        postgres_conn.send(data, table, schema)
+    for table in TABLES:
+        query = f"select TOP 20 * from {sqls_database}.{schemasql}.{table}"
+        #print (query)
+        dataCursor = sqls_conn.execute(query)
+        dataAll = dataCursor.fetchall()
+        columns = [column[0] for column in dataCursor.description]
+        data = pd.DataFrame.from_records(dataAll, columns=columns)
+        #print("data: ", data)
+        postgres_conn.send(data, table, schemapg)
 
     sqls_conn.close()
     postgres_conn.close()
