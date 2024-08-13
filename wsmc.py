@@ -10,13 +10,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 TABLES = [
-    # 'PROCUFV_GETCADASTROIMOB_TEMP',
+    # 'PROCUFV_GETCADASTROIMOB_TEMP', # sql server does not have 'DATAATUALIZACAO'
     'PROCUFV_GETCADASTROMOB_TEMP',
     'PROCUFV_GETDADOSITBI_TEMP'
 ]
 
 DATE_COL = {
-    # TABLES[0] : 'DATAATUALIZACAO',
+    # TABLES[0] : 'DATAATUALIZACAO', # sql server does not have 'DATAATUALIZACAO'
     TABLES[0] : 'DTINSCRICAOMUNICIPIO',
     TABLES[1] : 'DT_FISCALIZACAO'
 }
@@ -108,7 +108,7 @@ def main():
     for table in TABLES:
         
         query = f"select * from {sqls_cred['database']}.{sqls_cred['schema']}.{table}"
-
+        # Works fine ONLY when 'DATE_COL[table]' is type date
         if last_datetime:
             query += f" where \"{DATE_COL[table]}\" > '{last_datetime}'"
 
