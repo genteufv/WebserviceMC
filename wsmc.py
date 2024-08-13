@@ -21,7 +21,7 @@ DATE_COL = {
     TABLES[1] : 'DT_FISCALIZACAO'
 }
 
-LOG_FILE_PATH = 'webservice-mc_log.txt'
+LOG_FILE_PATH = 'logs/webservice-mc_log.txt'
 
 class DBConnection:
     def __init__(self, database_uri: str):
