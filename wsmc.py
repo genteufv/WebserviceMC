@@ -107,7 +107,7 @@ def main():
 
     for table in TABLES:
         
-        query = f"select * from {sqls_cred['database']}.{sqls_cred['schema']}.{table}"
+        query = f"select top 20 * from {sqls_cred['database']}.{sqls_cred['schema']}.{table}"
         # Works fine ONLY when 'DATE_COL[table]' is type date
         if last_datetime:
             query += f" where \"{DATE_COL[table]}\" > '{last_datetime}'"
