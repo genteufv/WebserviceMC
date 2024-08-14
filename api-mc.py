@@ -30,7 +30,9 @@ TABLES = [
 ]
 
 LOG_FILE_PATH = 'logs/api-mc_log.txt'
-column_date_modify = 'data_modificacao'
+COLUMN_DATE_MODIFY = 'data_modificacao'
+ENCRYPTED_FILE_NAME = 'credentials.enc'
+PRIVATE_KEY_NAME = 'private.pem'
 
 class DBConnection:
     def __init__(self, database_uri: str):
@@ -114,7 +116,7 @@ def connection_sql(data):
 @app.route('/get_recent_views/<table_name>', methods=['GET'])
 def get_recent_views(table_name):
 
-    data_file = decrypt('credentials.enc', 'private.pem')
+    data_file = decrypt(ENCRYPTED_FILE_NAME, PRIVATE_KEY_NAME)
 
     postgres_conn = connection_sql(data_file)
 
@@ -123,7 +125,7 @@ def get_recent_views(table_name):
 
     if recent_date != None:
         date_datetime = datetime.strptime(recent_date, "%d/%m/%Y %H:%M")
-        query = f"select * from {data_file.get("database")}.{data_file.get("schema")}.\"{table_name}\" where \"{column_date_modify}\" >= \'{date_datetime}\'"
+        query = f"select * from {data_file.get("database")}.{data_file.get("schema")}.\"{table_name}\" where \"{COLUMN_DATE_MODIFY}\"::date >= \'{date_datetime}\'"
     else:
         query = f"select * from {data_file.get("database")}.{data_file.get("schema")}.\"{table_name}\""
 
@@ -140,12 +142,12 @@ def get_recent_views(table_name):
 @app.route('/get_view/<table_name>/data/<date_str>', methods=['GET'])
 def get_date_view(table_name,date_str):
 
-    data_file = decrypt('credentials.enc', 'private.pem')
+    data_file = decrypt(ENCRYPTED_FILE_NAME, PRIVATE_KEY_NAME)
 
     postgres_conn = connection_sql(data_file)
 
     date_datetime = datetime.strptime(date_str, "%d%m%Y")
-    query = f"select * from {data_file.get("database")}.{data_file.get("schema")}.\"{table_name}\" where \"{column_date_modify}\" = \'{date_str}\'"
+    query = f"select * from {data_file.get("database")}.webservice.\"{table_name}\" where \"{COLUMN_DATE_MODIFY}\"::date = \'{date_datetime}\'"
 
     data = postgres_conn.read_sql(query)
     postgres_conn.close()
@@ -160,7 +162,7 @@ def get_date_view(table_name,date_str):
 @app.route('/get_view/<table_name>/periodo/<period>', methods=['GET'])
 def get_period_view(table_name,period):
 
-    data_file = decrypt('credentials.enc', 'private.pem')
+    data_file = decrypt(ENCRYPTED_FILE_NAME, PRIVATE_KEY_NAME)
 
     postgres_conn = connection_sql(data_file)
 
@@ -169,7 +171,7 @@ def get_period_view(table_name,period):
 
     start_date = datetime.strptime(data_str_start, "%d%m%Y")
     end_date = datetime.strptime(data_str_end, "%d%m%Y")
-    query = f"select * from {data_file.get("database")}.{data_file.get("schema")}.\"{table_name}\" where \"{column_date_modify}\" between \'{data_str_start}\' and \'{data_str_end}\'"
+    query = f"select * from {data_file.get("database")}.{data_file.get("schema")}.\"{table_name}\" where \"{COLUMN_DATE_MODIFY}\"::date between \'{data_str_start}\' and \'{data_str_end}\'"
 
     data = postgres_conn.read_sql(query)
     postgres_conn.close()
