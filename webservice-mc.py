@@ -75,7 +75,7 @@ for table, date_column in TABLES:
             query += f" where {date_column} > {curr_datetime}"
 
     data = pd.read_sql(query, src_engine)
-    data.to_sql(table, tar_engine, if_exists='replace', index=False, schema=tar['schema'])
+    data.to_sql(table.split('.')[-1], tar_engine, if_exists='append', index=False, schema=tar['schema'])
     # print(data[date_column.split('.')[-1]])
 
 # Save into log the current datetime
