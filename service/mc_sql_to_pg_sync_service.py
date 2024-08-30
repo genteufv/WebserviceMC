@@ -1,12 +1,9 @@
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from sqlalchemy import create_engine
-from datetime import datetime
-import pandas as pd
-import json
-import os
-import pyodbc
+from   service.utils import decrypt, date_log_event, get_last_log                
+from   sqlalchemy    import create_engine
+from   datetime      import datetime
 import warnings
+import pandas        as     pd
+import pyodbc
 
 warnings.filterwarnings("ignore")
 
@@ -19,36 +16,8 @@ TABLES = [
 LOG_FILE_PATH = 'logs/webservice-mc_log.txt'
 BATCH_SIZE = 10000  # Tamanho do lote para processamento
 
-def get_last_log_datetime(file_path):
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as f:
-            lines = f.readlines()
-            if lines:
-                return lines[-1].strip()
-    return None
-
-def decrypt(encrypted_file_path, private_key_path):
-    with open(private_key_path, "rb") as key_file:
-        private_key = load_pem_private_key(key_file.read(), password=None)
-
-    with open(encrypted_file_path, "rb") as enc_file:
-        encrypted_data = enc_file.read()
-
-    decrypted_data = private_key.decrypt(
-        encrypted_data,
-        padding.PKCS1v15()
-    )
-    
-    try:
-        data = json.loads(decrypted_data)
-    except json.JSONDecodeError as e:
-        print(f"Failed to decode JSON: {e}")
-        return None
-    
-    return data
-
-src = decrypt('credentials_SQLS.enc', 'private.pem')       # SQL SERVER CREDENTIALS (hostname, database, port, password etc...)
-tar = decrypt('credentials_PostgreSQL.enc', 'private.pem') # POSTGRESQL CREDENTIALS (hostname, database, port, password etc...)
+src = decrypt('credentials_SQLS.enc', 'private.pem')       # SQL SERVER CREDENTIALS (host, database, port, password etc...)
+tar = decrypt('credentials_PostgreSQL.enc', 'private.pem') # POSTGRESQL CREDENTIALS (host, database, port, password etc...)
 
 try:
     connection = pyodbc.connect(
@@ -68,7 +37,7 @@ tar_engine = create_engine(
 )
 
 print("conectou sql")
-log = get_last_log_datetime(LOG_FILE_PATH)
+log = get_last_log(LOG_FILE_PATH)
 
 # Send new data from 'src' (SQL SERVER) to 'tar' (POSTGRESQL)
 for table, date_column in TABLES:
@@ -105,7 +74,9 @@ for table, date_column in TABLES:
         offset += BATCH_SIZE
 
 # Save into log the current datetime
-with open(LOG_FILE_PATH, 'a') as f:
-    f.write(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n')
+date_log_event(
+    LOG_FILE_PATH, 
+    datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+)
 
 tar_engine.dispose()
