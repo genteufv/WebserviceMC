@@ -95,10 +95,10 @@ def get_recent_views(table_name):
     
     data = pd.read_sql(query, engine)
 
-    date_log_event(
-        LOG_FILE_PATH, 
-        datetime.now().strftime('%d/%m/%Y %H:%M') + " " + table_name
-    )
+    # date_log_event(
+    #     LOG_FILE_PATH, 
+    #     datetime.now().strftime('%d/%m/%Y %H:%M') + " " + table_name
+    # )
     engine.dispose()
     
     return data.to_json(orient='records', date_format="iso")
