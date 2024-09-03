@@ -170,7 +170,7 @@ def check_api_key():
     """
     Middleware to check the API key for GET requests. Returns a 403 error if the API key is missing or invalid.
     """
-    if request.path != '/' and request.method == 'GET':
+    if request.path != '/' and request.path != '/login' and request.method == 'GET':
         api_key = request.headers.get('apikey')
         if not api_key or not validate_api_key(api_key):
             return jsonify({'error': 'Invalid API key'}), 403
