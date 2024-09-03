@@ -42,6 +42,9 @@ def get_last_log_datetime(table_name):
         return None
     
     splited_log = log.split()
+
+    if len(splited_log) != 3:
+        return None
     
     last_datetime = splited_log[0] + ' ' + splited_log[1]
     table = splited_log[2]
@@ -121,10 +124,6 @@ def get_date_view(table_name, date_str):
 
     data = pd.read_sql(query, engine)
 
-    date_log_event(
-        LOG_FILE_PATH, 
-        datetime.now().strftime('%d/%m/%Y %H:%M') + " " + table_name
-    )
     engine.dispose()
  
     return data.to_json(orient='records', date_format="iso")
@@ -151,10 +150,6 @@ def get_period_view(table_name, period):
 
     data = pd.read_sql(query, engine)
 
-    date_log_event(
-        LOG_FILE_PATH, 
-        datetime.now().strftime('%d/%m/%Y %H:%M') + " " + table_name
-    )
     engine.dispose()
 
     return data.to_json(orient='records', date_format="iso")
